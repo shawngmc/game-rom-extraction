@@ -1,0 +1,148 @@
+{
+    "roms": {
+        "1556690": {
+            "name":"Ghouls n' Ghosts",
+            "id":"1556690",
+            "method":"subfolder",
+            "mamename":"gng"
+        },
+        "1556700": {
+            "name":"Vulgus",
+            "id":"1556700",
+            "method":"subfolder",
+            "mamename":"vulgus"
+        },
+        "1556701": {
+            "name":"Pirate Ship Higemaru",
+            "id":"1556701",
+            "method":"subfolder",
+            "mamename":"higemaru"
+        },
+        "1556702": {
+            "name":"1942",
+            "id":"1556702",
+            "method":"subfolder",
+            "mamename":"1942"
+        },
+        "1556703": {
+            "name":"Commando",
+            "id":"1556703",
+            "method":"subfolder",
+            "mamename":"commandou"
+        },
+        "1556704": {
+            "name":"Section Z",
+            "id":"1556704",
+            "method":"subfolder",
+            "mamename":"sectionza"
+        },
+        "1556705": {
+            "name":"Tatakai no Banka",
+            "id":"1556705",
+            "method":"subfolder",
+            "mamename":"trojanj"
+        },
+        "1556700": {
+            "name":"Vulgus",
+            "id":"1556700",
+            "method":"subfolder",
+            "mamename":"vulgus"
+        },
+        "1556706": {
+            "name":"Legendary Wings",
+            "id":"1556706",
+            "method":"subfolder",
+            "mamename":"lwings"
+        },
+        "1556707": {
+            "name":"Bionic Commando",
+            "id":"1556707",
+            "method":"subfolder",
+            "mamename":"bionicc2"
+        },
+        "1556708": {
+            "name":"Forgotton Worlds",
+            "id":"1556708",
+            "method":"subfolder",
+            "mamename":"forgottnuaa"
+        },
+        "1556709": {
+            "name":"Ghouls n' Ghosts",
+            "id":"1556709",
+            "method":"subfolder",
+            "mamename":"ghoulsu"
+        },
+        "1556710": {
+            "name":"Strider",
+            "id":"1556710",
+            "method":"subfolder",
+            "mamename":"striderua"
+        },
+        "1556711": {
+            "name":"Dynasty Wars",
+            "id":"1556711",
+            "method":"subfolder",
+            "mamename":"dynwar"
+        },
+        "1556717": {
+            "name":"Street Fighter II",
+            "id":"1556717",
+            "method":"subfolder",
+            "mamename":"sf2ul"
+        },
+        "1556718": {
+            "name":"Captain Commando",
+            "id":"1556718",
+            "method":"subfolder",
+            "mamename":"captcomm"
+        },
+        "1556719": {
+            "name":"Varth Operation Thunderstorm",
+            "id":"1556719",
+            "method":"subfolder",
+            "mamename":"varth"
+        },
+        "1556720": {
+            "name":"Warriors of Fate",
+            "id":"1556720",
+            "method":"subfolder",
+            "mamename":"wofu"
+        },
+        "1556721": {
+            "name":"Street Fighter II Hyper Fighting",
+            "id":"1556721",
+            "method":"subfolder",
+            "mamename":"sf2hfu"
+        },
+        "1556723": {
+            "name":"Powered Gear: Strategic Variant Armor Equipment",
+            "id":"1556723",
+            "method":"subfolder",
+            "mamename":"pgear"
+        },
+        "1556712": {
+            "name":"Final Fight",
+            "id":"1556712",
+            "method":"basefolder",
+            "mamename":"ffightu"
+        },
+        "1556714": {
+            "name":"Senjou no Ookami II",
+            "id":"1556714",
+            "method":"basefolder",
+            "mamename":"mercsj"
+        },
+        "1556715": {
+            "name":"Mega Twins",
+            "id":"1556715",
+            "method":"basefolder",
+            "mamename":"mtwins"
+        },
+        "1556716": {
+            "name":"Carrier Air Wing",
+            "id":"1556716",
+            "method":"basefolder",
+            "mamename":"cawingu"
+        }
+    }
+}
