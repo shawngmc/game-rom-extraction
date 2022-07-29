@@ -164,8 +164,44 @@
                 },
                 {
                     "kpka_offset": 20260870,
-                    "strategy": "demerge",
-                    "mame_name": "cybotsu"
+                    "strategy": "cybotsu_split_test",
+                    "mame_name": "cybotsu",
+                    "parts": {
+                        "maincpu": [
+                            {
+                                "name": "cybu.03",
+                                "sha1": "de9f3f261003f4f70ae32114a15e498387c23f6d"
+                            },
+                            {
+                                "name": "cybu.04",
+                                "sha1": "b2b9379c84b121048cb83a8c48756b48cdbc3ea1"
+                            },
+                            {
+                                "name": "cyb.05", 
+                                "sha1": "dd611c1708e7ef86e4f7cac4b7b0dff7baaee5ed"
+                            },
+                            {
+                                "name": "cyb.06", 
+                                "sha1": "2ea005f3e73b05f8f0ec006cd9e95f7731a73897"
+                            },
+                            {
+                                "name": "cyb.07", 
+                                "sha1": "4f607e733e2dea80211497522be6d0f09571928d"
+                            },
+                            {
+                                "name": "cyb.08", 
+                                "sha1": "9714579a7a78b9716e44bca6c18bf1a93aa4e482"
+                            },
+                            {
+                                "name": "cyb.09", 
+                                "sha1": "16abd92ebed921a6a7e8eac4b098dc61f7e5485c"
+                            },
+                            {
+                                "name": "cyb.10", 
+                                "sha1": "8a65026ae35247cda016ce85a34034c62b3aa1a6"
+                            }
+                        ]
+                    }
                 }
             ]
         },
