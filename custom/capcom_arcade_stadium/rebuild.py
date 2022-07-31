@@ -1,10 +1,10 @@
+import traceback
 import hashlib
 import glob
 import json
 import zipfile
 import sys
 import zlib
-import base64
 import logging, sys
 import os
 import io
@@ -53,41 +53,103 @@ def cybotsu_split_test(contents, override_meta):
             # read in the entry - we need the body either way
             with old_archive.open(file_entry) as file_read_obj:
                 file_data = file_read_obj.read()
-                orig_data[getType(file_entry)] = file_data
+                type_name = getType(file_entry)
+                print(f'{type_name}: {file_data[0:20]}')
+                orig_data[type_name] = file_data
 
-    # Start with the maincpu
-    curr_parts = override_meta['parts']['maincpu']
-    maincpu_file_names = list(map(lambda chunk: chunk['name'], curr_parts))
-    maincpu_chunks = even_swap_split(orig_data['maincpu'], len(maincpu_file_names))
+    # Process each section
+    new_data = dict()
+    for part_type, part_metadata in override_meta['parts'].items():
+        part_file_entries = part_metadata['files']
+        if part_metadata['handler'] == "even_swap_split":
+            file_names = list(map(lambda chunk: chunk['name'], part_file_entries))
+            chunks = even_swap_split(orig_data[part_type], len(file_names))
+        elif part_metadata['handler'] == "transforms":
+            file_names = list(map(lambda chunk: chunk['name'], part_file_entries))
+            chunks = [orig_data[part_type]]
+            
+            # print(f'Num chunks: {len(chunks)}')
+            # print(f'1st chunk size: {len(chunks[0])}')
+            # print(f'1st chunk preview: {chunks[0][0:20]}')
+            for transform in part_metadata['transforms']:
+                new_chunks = []
+                if transform['action'] == "split":
+                    for chunk in chunks:
+                        num_chunks = transform['ways']
+                        start_offset = 0
+                        chunk_size = len(chunk)//num_chunks
+                        for i in range(0, num_chunks):
+                            new_chunks.append(bytearray(chunk[start_offset:start_offset+chunk_size]))
+                            start_offset = start_offset + chunk_size
+                elif transform['action'] == "deinterleave":
+                    for chunk in chunks:
+                        num_ways = transform['ways']
+                        chunk_size = len(chunk)//num_ways
+                        word_size = transform['word_size_bytes']
+                        interleave_group_length = num_ways * word_size
+                        num_interleave_groups = len(chunk)//interleave_group_length
+                        temp_chunks = [bytearray() for i in range(num_ways)]
+                        for i in range(0, num_interleave_groups):
+                            offset = i * interleave_group_length
+                            interleave_group = chunk[offset:offset+interleave_group_length]
+                            interleave_offset = 0
+                            for j in range(0, num_ways):
+                                interleave_end = interleave_offset + word_size
+                                temp_chunks[j].extend(interleave_group[interleave_offset:interleave_end])
+                                interleave_offset = interleave_end
+                        new_chunks += temp_chunks
+                elif transform['action'] == "truncate":
+                    max_size = transform['max_length_bytes']
+                    for chunk in chunks:
+                        if len(chunk) > max_size:
+                            new_chunks.append(chunk[0:max_size])
+                        else:
+                            new_chunks.append(chunk)
+                elif transform['action'] == "splice_out":
+                    start = transform['start']
+                    end = transform['end']
+                    cut_length = end - start
+                    for chunk in chunks:
+                        new_chunk = bytearray()
+                        new_chunk.extend(chunk[0:start])
+                        new_chunk.extend(chunk[end:len(chunk)])
+                        new_chunks.append(new_chunk)
+                elif transform['action'] == "endian":
+                    for chunk in chunks:  
+                        new_chunk = bytearray(len(chunk))
+                        new_chunk[0::2] = chunk[1::2]
+                        new_chunk[1::2] = chunk[0::2]
+                        new_chunks.append(new_chunk)
+                else:
+                    raise Exception(f'********* Transform action {transform["action"]} NYI!')
 
-    for i in range(0, len(maincpu_file_names)):
-        chunk = maincpu_chunks[i]
-        name = maincpu_file_names[i]
-        m = hashlib.sha1()
-        m.update(chunk)
-        print(f'{name}: Checksum OK: {m.hexdigest() == curr_parts[i]["sha1"]}')
+                chunks = new_chunks
+                # print(f'post {transform["action"]}')
+                # print(f'Num chunks: {len(chunks)}')
+                # print(f'1st chunk size: {len(chunks[0])}')
+                # print(f'1st chunk preview: {chunks[0][0:20]}')
 
-        
-	# gfx
-	# ROM_LOAD64_WORD( "cyb.13m",   0x0000000, 0x400000, CRC(f0dce192) SHA1(b743938dc8e772dc3f63ed88a4a54c34fffdba21) )
-	# ROM_LOAD64_WORD( "cyb.15m",   0x0000002, 0x400000, CRC(187aa39c) SHA1(80e3cf5c69f13343de667e1476bb716d45d3ff63) )
-	# ROM_LOAD64_WORD( "cyb.17m",   0x0000004, 0x400000, CRC(8a0e4b12) SHA1(40132f3cc79b0a74460ebd4e0d4ddbe240efc06f) )
-	# ROM_LOAD64_WORD( "cyb.19m",   0x0000006, 0x400000, CRC(34b62612) SHA1(154bbceb7d303a208abb1b2f3d507d5afacc71ed) )
-	# ROM_LOAD64_WORD( "cyb.14m",   0x1000000, 0x400000, CRC(c1537957) SHA1(bfb1cc6786277b94ce28bfd464e2bbb6f6d3486e) )
-	# ROM_LOAD64_WORD( "cyb.16m",   0x1000002, 0x400000, CRC(15349e86) SHA1(b0cde577d29a9f4e718b673c8645529ef0ababc9) )
-	# ROM_LOAD64_WORD( "cyb.18m",   0x1000004, 0x400000, CRC(d83e977d) SHA1(e03f4a120c95a2f476ffc8492bca85e0c5cea068) )
-	# ROM_LOAD64_WORD( "cyb.20m",   0x1000006, 0x400000, CRC(77cdad5c) SHA1(94d0cc5f05de4bc2d43977d91f887005dc10310c) )
+        for i in range(0, len(chunks)):
+            chunk = chunks[i]
+            name = file_names[i]
+            exp_hash = part_file_entries[i]["sha1"]
+            m = hashlib.sha1()
+            m.update(chunk)
+            if m.hexdigest() == exp_hash:
+                new_data[name] = chunk
+                # print(f'Adding {name}...')
+            else:
+                print(f'Bad Checksum for {name}: got {m.hexdigest()} with length {len(chunk)}, expected {exp_hash}')
+                new_data[name] = chunk
+                # raise Exception(f'Bad Checksum for {name}: got {m.hexdigest()} with length {len(chunk)}, expected {exp_hash}')
 
-    # audio cpu
-	# ROM_REGION( QSOUND_SIZE, "audiocpu", 0 ) // 64k for the audio CPU (+banks)
-	# ROM_LOAD( "cyb.01",   0x00000, 0x08000, CRC(9c0fb079) SHA1(06d260875a76da08d56ea2b2ae277e8c2dbae6e3) )
-	# ROM_CONTINUE(         0x10000, 0x18000 )
-	# ROM_LOAD( "cyb.02",   0x28000, 0x20000, CRC(51cb0c4e) SHA1(c322957558d8d3e9dad090aebbe485978cbce8f5) )
+    # Build the new zip file
+    new_contents = io.BytesIO()
+    with zipfile.ZipFile(new_contents, "w") as new_archive:
+        for name, data in new_data.items():
+            new_archive.writestr(name, data)
 
-    # qsound
-	# ROM_REGION( 0x400000, "qsound", 0 ) // QSound samples
-	# ROM_LOAD16_WORD_SWAP( "cyb.11m",   0x000000, 0x200000, CRC(362ccab2) SHA1(28e537067d4846f22657ee37166d18b8f05f4da1) )
-	# ROM_LOAD16_WORD_SWAP( "cyb.12m",   0x200000, 0x200000, CRC(7066e9cc) SHA1(eb6a9d4998b3311344d73bae88d661d81609c492) )
+    return new_contents.getvalue()
 
 def parse_kpka_archive(bytes):
     magic_string = bytes[0:4].decode("utf-8")
@@ -275,6 +337,8 @@ def main():
                                 filename = f'cybotsu.zip'
                                 new_contents = cybotsu_split_test(contents, override)
                                 with open(os.path.join(out_path, filename), "wb") as out_file:
+                                    out_file.write(new_contents)
+                                with open(os.path.join(out_path, "cybotsu_orig.zip"), "wb") as out_file:
                                     out_file.write(contents)
                             else:
                                 print(f'********* Override for file offset {offset} {override["strategy"]} NYI!')
@@ -289,7 +353,8 @@ def main():
                             except Exception as e:
                                 print(e)
             except Exception as e:
-                print(e)
+                print(repr(e))
+                traceback.print_exc()
                 print('Error While Opening the file!') 
             # # if rom_metadata["method"] == "subfolder":
             # #     handle_subfolder_rom(file, rom_metadata)
