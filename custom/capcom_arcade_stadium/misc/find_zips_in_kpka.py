@@ -71,11 +71,8 @@ def parse_kpka_archive(bytes):
                 "size": size
             }
             curr_pos = curr_pos + 48
-            print(x)
-            print(total_files)
             offsets.append(offset)
 
-        print(len(files))
         return files
 
 def main():
