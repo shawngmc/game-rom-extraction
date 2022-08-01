@@ -21,26 +21,7 @@ def get_id_from_name(filename):
 def find_files(in_path):
     return glob.glob(in_path +'/*.pak')
 
-def swap_odd_even_bytes(contents):
-    contents_array = bytearray(len(contents))
-    contents_array[0::2] = contents[1::2]
-    contents_array[1::2] = contents[0::2]
-    return contents_array
-
-
-def even_swap_split(contents, chunk_count):
-    chunks = []
-    chunk_size = len(contents) // chunk_count
-    start_offset = 0
-    for i in range(0, chunk_count):
-        chunk = contents[start_offset:start_offset+chunk_size]
-        chunk = swap_odd_even_bytes(chunk)
-        start_offset = start_offset + chunk_size
-        chunks.append(chunk)
-    return chunks
-
-
-def cybotsu_split_test(contents, override_meta):
+def transforms(contents, override_meta):
     # Load the zip file contents
     orig_data = dict()
     with zipfile.ZipFile(io.BytesIO(contents), "r") as old_archive:
@@ -54,80 +35,76 @@ def cybotsu_split_test(contents, override_meta):
             with old_archive.open(file_entry) as file_read_obj:
                 file_data = file_read_obj.read()
                 type_name = getType(file_entry)
-                print(f'{type_name}: {file_data[0:20]}')
                 orig_data[type_name] = file_data
 
     # Process each section
     new_data = dict()
     for part_type, part_metadata in override_meta['parts'].items():
+        print(f'  Processing {part_type}...')
         part_file_entries = part_metadata['files']
-        if part_metadata['handler'] == "even_swap_split":
-            file_names = list(map(lambda chunk: chunk['name'], part_file_entries))
-            chunks = even_swap_split(orig_data[part_type], len(file_names))
-        elif part_metadata['handler'] == "transforms":
-            file_names = list(map(lambda chunk: chunk['name'], part_file_entries))
-            chunks = [orig_data[part_type]]
-            
-            # print(f'Num chunks: {len(chunks)}')
-            # print(f'1st chunk size: {len(chunks[0])}')
-            # print(f'1st chunk preview: {chunks[0][0:20]}')
-            for transform in part_metadata['transforms']:
-                new_chunks = []
-                if transform['action'] == "split":
-                    for chunk in chunks:
-                        num_chunks = transform['ways']
-                        start_offset = 0
-                        chunk_size = len(chunk)//num_chunks
-                        for i in range(0, num_chunks):
-                            new_chunks.append(bytearray(chunk[start_offset:start_offset+chunk_size]))
-                            start_offset = start_offset + chunk_size
-                elif transform['action'] == "deinterleave":
-                    for chunk in chunks:
-                        num_ways = transform['ways']
-                        chunk_size = len(chunk)//num_ways
-                        word_size = transform['word_size_bytes']
-                        interleave_group_length = num_ways * word_size
-                        num_interleave_groups = len(chunk)//interleave_group_length
-                        temp_chunks = [bytearray() for i in range(num_ways)]
-                        for i in range(0, num_interleave_groups):
-                            offset = i * interleave_group_length
-                            interleave_group = chunk[offset:offset+interleave_group_length]
-                            interleave_offset = 0
-                            for j in range(0, num_ways):
-                                interleave_end = interleave_offset + word_size
-                                temp_chunks[j].extend(interleave_group[interleave_offset:interleave_end])
-                                interleave_offset = interleave_end
-                        new_chunks += temp_chunks
-                elif transform['action'] == "truncate":
-                    max_size = transform['max_length_bytes']
-                    for chunk in chunks:
-                        if len(chunk) > max_size:
-                            new_chunks.append(chunk[0:max_size])
-                        else:
-                            new_chunks.append(chunk)
-                elif transform['action'] == "splice_out":
-                    start = transform['start']
-                    end = transform['end']
-                    cut_length = end - start
-                    for chunk in chunks:
-                        new_chunk = bytearray()
-                        new_chunk.extend(chunk[0:start])
-                        new_chunk.extend(chunk[end:len(chunk)])
-                        new_chunks.append(new_chunk)
-                elif transform['action'] == "endian":
-                    for chunk in chunks:  
-                        new_chunk = bytearray(len(chunk))
-                        new_chunk[0::2] = chunk[1::2]
-                        new_chunk[1::2] = chunk[0::2]
-                        new_chunks.append(new_chunk)
-                else:
-                    raise Exception(f'********* Transform action {transform["action"]} NYI!')
+        file_names = list(map(lambda chunk: chunk['name'], part_file_entries))
+        chunks = [orig_data[part_type]]
+        for transform in part_metadata['transforms']:
+            new_chunks = []
+            if transform['action'] == "split":
+                for chunk in chunks:
+                    num_chunks = transform['ways']
+                    start_offset = 0
+                    chunk_size = len(chunk)//num_chunks
+                    for i in range(0, num_chunks):
+                        new_chunks.append(bytearray(chunk[start_offset:start_offset+chunk_size]))
+                        start_offset = start_offset + chunk_size
+            elif transform['action'] == "split_size":
+                for chunk in chunks:
+                    sizes = transform['sizes']
+                    num_chunks = len(sizes)
+                    start_offset = 0
+                    for i in range(0, num_chunks):
+                        new_chunks.append(bytearray(chunk[start_offset:start_offset+sizes[i]]))
+                        start_offset = start_offset + sizes[i]
+            elif transform['action'] == "deinterleave":
+                for chunk in chunks:
+                    num_ways = transform['ways']
+                    chunk_size = len(chunk)//num_ways
+                    word_size = transform['word_size_bytes']
+                    interleave_group_length = num_ways * word_size
+                    num_interleave_groups = len(chunk)//interleave_group_length
+                    temp_chunks = [bytearray() for i in range(num_ways)]
+                    for i in range(0, num_interleave_groups):
+                        offset = i * interleave_group_length
+                        interleave_group = chunk[offset:offset+interleave_group_length]
+                        interleave_offset = 0
+                        for j in range(0, num_ways):
+                            interleave_end = interleave_offset + word_size
+                            temp_chunks[j].extend(interleave_group[interleave_offset:interleave_end])
+                            interleave_offset = interleave_end
+                    new_chunks += temp_chunks
+            elif transform['action'] == "truncate":
+                max_size = transform['max_length_bytes']
+                for chunk in chunks:
+                    if len(chunk) > max_size:
+                        new_chunks.append(chunk[0:max_size])
+                    else:
+                        new_chunks.append(chunk)
+            elif transform['action'] == "splice_out":
+                start = transform['start']
+                end = transform['end']
+                for chunk in chunks:
+                    new_chunk = bytearray()
+                    new_chunk.extend(chunk[0:start])
+                    new_chunk.extend(chunk[end:len(chunk)])
+                    new_chunks.append(new_chunk)
+            elif transform['action'] == "endian":
+                for chunk in chunks:  
+                    # print(f'    chunk size: {len(chunk)}')
+                    new_chunk = bytearray(len(chunk))
+                    new_chunk[0::2] = chunk[1::2]
+                    new_chunk[1::2] = chunk[0::2]
+                    new_chunks.append(new_chunk)
+            else:
+                raise Exception(f'********* Transform action {transform["action"]} NYI!')
 
-                chunks = new_chunks
-                # print(f'post {transform["action"]}')
-                # print(f'Num chunks: {len(chunks)}')
-                # print(f'1st chunk size: {len(chunks[0])}')
-                # print(f'1st chunk preview: {chunks[0][0:20]}')
+            chunks = new_chunks
 
         for i in range(0, len(chunks)):
             chunk = chunks[i]
@@ -137,11 +114,9 @@ def cybotsu_split_test(contents, override_meta):
             m.update(chunk)
             if m.hexdigest() == exp_hash:
                 new_data[name] = chunk
-                # print(f'Adding {name}...')
             else:
                 print(f'Bad Checksum for {name}: got {m.hexdigest()} with length {len(chunk)}, expected {exp_hash}')
                 new_data[name] = chunk
-                # raise Exception(f'Bad Checksum for {name}: got {m.hexdigest()} with length {len(chunk)}, expected {exp_hash}')
 
     # Build the new zip file
     new_contents = io.BytesIO()
@@ -284,7 +259,8 @@ def main():
         logging.debug(f"{file}: {id}")
         if id in romlist: 
             rom_metadata = romlist[id]  
-            print(rom_metadata)
+            # print(rom_metadata)
+            print(f'Extracting {rom_metadata["name"]}...')
             try:
                 with open(file, "rb") as curr_file:
                     file_content = bytearray(curr_file.read())
@@ -313,8 +289,9 @@ def main():
                     for offset, contents in kpka_zips.items():
                         override = find_override(rom_metadata, offset)
                         if override:
+                            print(f' Processing override for {override["mame_name"]}...')
                             if not 'strategy' in override:
-                                print(f'********* Override for file offset {offset} has no strategy!')
+                                # print(f'********* Override for file offset {offset} has no strategy!')
                                 filename = f'BAD_{id}_{offset}_nyi.zip'
                                 with open(os.path.join(out_path, filename), "wb") as out_file:
                                     out_file.write(contents)
@@ -329,19 +306,18 @@ def main():
                                     with open(os.path.join(out_path, filename), "wb") as out_file:
                                         out_file.write(contents)
                             elif override['strategy'] == "demerge":
-                                print(f'********* Override for file offset {offset} demerge NYI!')
+                                # print(f'********* Override for file offset {offset} demerge NYI!')
                                 filename = f'BAD_{id}_{offset}_{override["mame_name"]}_demerge_nyi.zip'
                                 with open(os.path.join(out_path, filename), "wb") as out_file:
                                     out_file.write(contents)
-                            elif override['strategy'] == "cybotsu_split_test":
-                                filename = f'cybotsu.zip'
-                                new_contents = cybotsu_split_test(contents, override)
-                                with open(os.path.join(out_path, filename), "wb") as out_file:
+                            elif override['strategy'] == "transforms":
+                                new_contents = transforms(contents, override)
+                                with open(os.path.join(out_path, f'{override["mame_name"]}.zip'), "wb") as out_file:
                                     out_file.write(new_contents)
-                                with open(os.path.join(out_path, "cybotsu_orig.zip"), "wb") as out_file:
+                                with open(os.path.join(out_path, f'{override["mame_name"]}_orig.zip'), "wb") as out_file:
                                     out_file.write(contents)
                             else:
-                                print(f'********* Override for file offset {offset} {override["strategy"]} NYI!')
+                                # print(f'********* Override for file offset {offset} {override["strategy"]} NYI!')
                                 filename = f'BAD_{id}_{offset}_{override["strategy"]}_nyi.zip'
                                 with open(os.path.join(out_path, filename), "wb") as out_file:
                                     out_file.write(contents)
@@ -356,19 +332,20 @@ def main():
                 print(repr(e))
                 traceback.print_exc()
                 print('Error While Opening the file!') 
-            # # if rom_metadata["method"] == "subfolder":
-            # #     handle_subfolder_rom(file, rom_metadata)
-            # # elif rom_metadata["method"] == "basefolder":
-            # #     handle_basefolder_rom(file, rom_metadata)
-            # # elif rom_metadata["method"] == "merged":
-            # #     handle_merged_rom(file, rom_metadata)
-            # if rom_metadata["method"] == "subzip":
-            #     handle_subzip_rom(file, rom_metadata)
-            # else:
-            #     print("Unknown handling; skipping...")
         else:
             logging.info(f'{file} not in romlist; skipping...')
 
+    print("""
+        Processing complete. 
+
+        TODOs:
+         - Implement more games with this framework
+         - Add CLI flags
+         - Figure out fixes for the 'incomplete' games
+           - Source for dl-1425.bin
+           - How do we find/reproduce the enc keys
+
+    """)
 
 main()
 
