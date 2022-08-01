@@ -3,10 +3,13 @@ Pulling CAS1 via old Steam Depots:
 
 The notes I found were at https://retropie.org.uk/forum/topic/10918/where-to-legally-acquire-content-to-play-on-retropie/606?lang=en-US. 
 Essentially, while a new version was added to steam, the old version can be specifically downloaded.
+You can pull these by visiting steam://nav/console (this opens a hidden CLI within Steam), then using the command 'download_depot <GameID> <DepotID> <ManifestID>'
+This will download them into your Steam folder, under steamapps\content\app_<GameID>\depot_<DepotID>
 An easier tool to pull the old versions can be found here: https://github.com/SteamRE/DepotDownloader
 
 After that, my python script and rom list can rebuild many of the ROMs. A couple still need retested (I ignored them at the time as they were dupes in my colleciton.)
 
+## Capcom Arcade Stadium 1 - Game ID 1515950
 
 | Game                                             | Steam DepotID | Steam ManifestID     | Can Extract       | MAME Version | ENG Filename     | JP Filename      | Extra filename   |
 |--------------------------------------------------|---------------|----------------------|-------------------|--------------|------------------|------------------|------------------|
