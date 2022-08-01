@@ -1,0 +1,48 @@
+# RE Engine generic unpack
+# Modified by ito
+
+# Based on:
+# Resident Evil 2 / Biohazard RE:2 (PAK format)
+# Written by Ekey (h4x0r)
+# demo to release fix (1 line edit by JTeghius all credit to h4x0r for the script)
+# script for QuickBMS http://quickbms.aluigi.org
+
+idstring "KPKA"
+get VERSION long
+get FILES long
+get DUMMY0 long
+
+for i = 0 < FILES
+   get NAME_CRC_L long
+   get NAME_CRC_U long
+   get OFFSET longlong
+   get ZSIZE longlong
+   get SIZE longlong
+   get FLAG longlong
+   get DUMMY2 long
+   get DUMMY3 long
+   set NAME = "offset_"
+   set OFFSET_STR = "00000000"
+   string OFFSET_STR + OFFSET
+   string OFFSET_STR < -8
+   string NAME + OFFSET_STR
+   string NAME + "_size_"
+   string NAME + SIZE
+   
+   math FLAG &= 0xF
+   if FLAG == 0
+      string NAME + "_raw.dat"
+      log NAME OFFSET SIZE
+   else if FLAG == 1
+      comtype deflate
+      string NAME + "_deflate.dat"
+      clog NAME OFFSET ZSIZE SIZE
+   else if FLAG == 2
+      comtype zstd
+      string NAME + "_zstd.dat"
+      clog NAME OFFSET ZSIZE SIZE
+   else
+      string NAME + "_unknown.dat"
+      log NAME OFFSET SIZE
+   endif
+next i
