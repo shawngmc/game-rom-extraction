@@ -2,7 +2,7 @@
     "roms": {
         "1556690": {
             "id":"1556690",
-            "name":"Ghouls n' Ghosts"
+            "name":"Ghosts 'n Goblins"
         },
         "1556700": {
             "id":"1556700",
@@ -49,7 +49,7 @@
         },
         "1556709": {
             "id":"1556709",
-            "name":"Ghouls n' Ghosts"
+            "name":"Ghouls 'n Ghosts"
         },
         "1556710": {
             "id":"1556710",
@@ -116,7 +116,14 @@
         },
         "1556717": {
             "id":"1556717",
-            "name":"Street Fighter II"
+            "name":"Street Fighter II",
+            "overrides": [
+                {
+                    "kpka_offset": 3611065,
+                    "strategy": "rename",
+                    "mame_name": "sf2um"
+                }
+            ]
         },
         "1556718": {
             "id":"1556718",

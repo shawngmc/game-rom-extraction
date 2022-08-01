@@ -227,7 +227,7 @@ def rebuild_mame_subfolder_zip(contents):
         def getName(zip_entry):
             return zip_entry.filename.split('/')[1]
 
-        # first, check the zip entries
+        # first, check the zip entries for a subfolder to reuse the name of
         try:
             index = zip_entries[0].filename.index('/')
         except Exception as e:
@@ -312,11 +312,6 @@ def main():
                                 for filename, contents in new_files.items():
                                     with open(os.path.join(out_path, filename), "wb") as out_file:
                                         out_file.write(contents)
-                            elif override['strategy'] == "demerge":
-                                # print(f'********* Override for file offset {offset} demerge NYI!')
-                                filename = f'BAD_{id}_{offset}_{override["mame_name"]}_demerge_nyi.zip'
-                                with open(os.path.join(out_path, filename), "wb") as out_file:
-                                    out_file.write(contents)
                             elif override['strategy'] == "transforms":
                                 new_contents = transforms(contents, override)
                                 with open(os.path.join(out_path, f'{override["mame_name"]}.zip'), "wb") as out_file:
