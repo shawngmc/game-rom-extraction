@@ -300,7 +300,7 @@ def main():
                                 with open(os.path.join(out_path, filename), "wb") as out_file:
                                     out_file.write(contents)
                             elif override['strategy'] == "split_1941":
-                                # This is a weird one - 1941.zip is in the zip, and 1941j/* is 1944j.zip
+                                # This is a weird one - 1941.zip is in the zip, and 1941j/* is 1941j.zip
                                 new_files = split_1941(contents)
                                 for filename, contents in new_files.items():
                                     with open(os.path.join(out_path, filename), "wb") as out_file:
