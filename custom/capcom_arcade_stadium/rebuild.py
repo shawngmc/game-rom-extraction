@@ -344,6 +344,8 @@ def main():
          - Figure out fixes for the 'incomplete' games
            - Source for dl-1425.bin
            - How do we find/reproduce the enc keys
+        - Find 3 Wonders in GnG?
+        - Pull 1943 from the old master pak? 00000229.zip and 00000700.zip
 
     """)
 
