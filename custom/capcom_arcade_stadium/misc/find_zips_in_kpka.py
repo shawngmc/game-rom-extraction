@@ -1,9 +1,5 @@
 import traceback
-import hashlib
-import glob
-import json
 from unicodedata import decimal
-import zipfile
 import sys
 import zlib
 import logging, sys

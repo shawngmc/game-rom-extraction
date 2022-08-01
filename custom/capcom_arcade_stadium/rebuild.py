@@ -176,7 +176,13 @@ def parse_kpka_archive(bytes):
                 logging.warning(f'    size: {size}')
                 contents = bytes[offset:offset+zsize]
 
-            files[offset] = contents
+            # Don't hash on offset, dupe offsets have been observed
+            files[x] = {
+                "contents": contents,
+                "offset": offset,
+                "entry": x,
+                "size": size
+            }
             curr_pos = curr_pos + 48
 
         return files
@@ -259,7 +265,6 @@ def main():
         logging.debug(f"{file}: {id}")
         if id in romlist: 
             rom_metadata = romlist[id]  
-            # print(rom_metadata)
             print(f'Extracting {rom_metadata["name"]}...')
             try:
                 with open(file, "rb") as curr_file:
@@ -268,9 +273,9 @@ def main():
 
                     # Remove non-zip files
                     kpka_zips = dict()
-                    for offset, contents in kpka_contents.items():
-                        if (contents[0:2].decode("utf-8") == "PK"):
-                            kpka_zips[offset] = contents
+                    for offset, file_entry in kpka_contents.items():
+                        if (file_entry['contents'][0:2].decode("utf-8") == "PK"):
+                            kpka_zips[offset] = file_entry
 
                     def find_override(rom_metadata, offset):
                         if not "overrides" in rom_metadata:
@@ -286,7 +291,9 @@ def main():
                             raise Exception("Too many override matches!")
                         
 
-                    for offset, contents in kpka_zips.items():
+                    for file_entry in kpka_zips.values():
+                        offset = file_entry['offset']
+                        contents = file_entry['contents']
                         override = find_override(rom_metadata, offset)
                         if override:
                             print(f' Processing override for {override["mame_name"]}...')
